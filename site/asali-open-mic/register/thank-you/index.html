@@ -41,12 +41,35 @@
             <a class="back-link" href="/asali-open-mic/register/">&larr; Back to registration</a>
             <p class="eyebrow">Asali Poetry Sessions 9.0</p>
             <h1 class="page-title">Thank you</h1>
-            <p class="hero__lead">
-              If your payment was successful, Flutterwave will return you here. We will send a
-              confirmation email with your ticket code to the address you used when you
-              registered—usually within a few minutes.
+            <p class="hero__lead" data-thankyou-status>
+              If your payment was successful, you can download your ticket as a PDF below. We
+              will also email your ticket code to the address you used when you registered.
             </p>
-            <p class="body-copy">
+            <p class="body-copy" data-thankyou-poll-note>
+              If the button is not ready yet, wait a few seconds while we confirm your payment.
+            </p>
+            <div
+              class="status-card is-visible"
+              data-thankyou-download
+              id="thankyou-ticket"
+              style="max-width: 32rem; margin-top: 1.25rem"
+              hidden
+            >
+              <p style="margin: 0 0 0.75rem; font-weight: 600; color: var(--color-forest)">
+                Your ticket
+              </p>
+              <p class="field-note" style="margin-bottom: 1rem">
+                Download a PDF to your phone to show at the door (same details as the confirmation
+                email).
+              </p>
+              <a
+                class="button"
+                data-ticket-pdf-link
+                href="#"
+                download
+              >Download ticket (PDF)</a>
+            </div>
+            <p class="body-copy" style="margin-top: 1.5rem">
               Did not receive an email? Check spam or promotions, then contact
               <a class="text-link" href="mailto:admin@cavemen.africa">admin@cavemen.africa</a>
               with the phone number you registered with.
@@ -106,5 +129,6 @@
       </footer>
     </div>
     <script src="/scripts/site.js"></script>
+    <script src="/scripts/thank-you.js" defer></script>
   </body>
 </html>

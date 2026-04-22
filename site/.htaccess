@@ -1,0 +1,16 @@
+# Apache on cPanel: map /api/... to PHP scripts (place this file in the document root, e.g. public_html
+# that contains the `site` folder, or in `site` if the docroot is the site directory).
+# If the site lives in a subfolder, set `RewriteBase /subfolder/`.
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # RewriteBase /
+
+  # Pretty API URLs
+  RewriteRule ^api/health$ api/health.php [L,QSA]
+  RewriteRule ^api/products$ api/products.php [L,QSA]
+  RewriteRule ^api/asali-registrations$ api/asali-registrations.php [L,QSA]
+  RewriteRule ^api/asali-payment-status$ api/asali-payment-status.php [L,QSA]
+  RewriteRule ^api/asali-ticket\.pdf$ api/asali-ticket-pdf.php [L,QSA]
+  RewriteRule ^api/webhooks/flutterwave$ api/webhooks/flutterwave.php [L,QSA]
+</IfModule>

@@ -20,6 +20,7 @@
 # production
 /build
 /site/data/cavemen.db
+/site/vendor
 
 # misc
 .DS_Store

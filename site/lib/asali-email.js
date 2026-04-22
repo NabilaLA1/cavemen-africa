@@ -20,42 +20,70 @@ function buildTicketEmailHtml({
   const safeType = escapeHtml(attendanceType);
   const safeEvent = escapeHtml(eventName);
 
+  const safeAmt = escapeHtml(String(amountNaira));
+  const sans =
+    "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif";
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="color-scheme" content="light">
   <title>Your ticket</title>
 </head>
-<body style="margin:0;font-family:Georgia,serif;background:#f6f1e8;color:#1c1915;line-height:1.6;">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f6f1e8;padding:24px 12px;">
+<body style="margin:0;padding:0;font-family:Georgia,'Times New Roman',serif;background:#e5dcd0;color:#1c1915;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(180deg,#e8e0d4 0%,#d9cfc0 100%);padding:28px 14px 36px;">
     <tr>
       <td align="center">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border:1px solid #d4c9b5;border-radius:16px;overflow:hidden;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;border-radius:20px;overflow:hidden;border:1px solid #c4b5a0;box-shadow:0 20px 50px rgba(28,25,21,0.12);">
           <tr>
-            <td style="padding:28px 28px 8px;">
-              <p style="margin:0 0 8px;font-size:13px;letter-spacing:0.12em;text-transform:uppercase;color:#9e4328;font-weight:700;">Payment confirmed</p>
-              <h1 style="margin:0 0 12px;font-size:22px;line-height:1.25;">${safeEvent}</h1>
-              <p style="margin:0;font-size:15px;color:#4a443a;">Hi ${safeName},</p>
-              <p style="margin:14px 0 0;font-size:15px;color:#4a443a;">
-                Thank you for your payment. Your ticket is below—please keep this email or save your ticket code for entry.
+            <td bgcolor="#1e3d2f" style="background:linear-gradient(150deg,#152a1f 0%,#1e3d2f 46%,#6b2f24 100%);padding:0;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                <tr>
+                  <td style="height:4px;font-size:0;line-height:0;background:linear-gradient(90deg,transparent 0%,#c45c3e 35%,#e8a090 50%,#c45c3e 65%,transparent 100%);">&nbsp;</td>
+                </tr>
+                <tr>
+                  <td style="padding:26px 26px 22px 26px;">
+                    <p style="margin:0 0 8px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;color:#f6f1e8;opacity:0.88;font-family:${sans};font-weight:600;">Cavemen Africa</p>
+                    <p style="margin:0 0 2px;font-size:12px;letter-spacing:0.1em;text-transform:uppercase;color:#e8a090;font-weight:600;font-family:${sans};">Studio of Studios · Kano</p>
+                    <h1 style="margin:12px 0 10px;font-size:25px;line-height:1.2;font-weight:700;color:#fefdfb;letter-spacing:-0.02em;">${safeEvent}</h1>
+                    <p style="margin:0;font-size:14px;line-height:1.45;color:rgba(246,241,232,0.9);font-family:${sans};font-style:italic;">Where raw voices rise—a creative space in Northern Nigeria.</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#fefdfb;padding:24px 26px 6px 26px;">
+              <p style="margin:0 0 10px;font-size:16px;font-weight:600;color:#1c1915;font-family:${sans};">Hi ${safeName},</p>
+              <p style="margin:0;font-size:15px;line-height:1.6;color:#4a443a;font-family:${sans};">
+                Your payment is in—you're on the list. The pass below is your code at the door. Keep this email; creative spaces work best when we show up for each other.
               </p>
             </td>
           </tr>
           <tr>
-            <td style="padding:8px 28px 28px;">
-              <div style="border:1px dashed #c45c3e;border-radius:12px;padding:18px 16px;background:rgba(30,61,47,0.06);text-align:center;">
-                <p style="margin:0 0 6px;font-size:12px;letter-spacing:0.14em;text-transform:uppercase;color:#4a443a;">Ticket code</p>
-                <p style="margin:0;font-size:22px;font-weight:700;letter-spacing:0.06em;color:#1e3d2f;font-family:ui-monospace,Menlo,Consolas,monospace;">${safeCode}</p>
-                <p style="margin:14px 0 0;font-size:14px;color:#4a443a;">
-                  <strong>${safeType}</strong> · N${escapeHtml(String(amountNaira))}
-                </p>
-              </div>
-              <p style="margin:18px 0 0;font-size:13px;color:#6b6358;">
-                Cavemen Africa · No 2 Guda Abdullahi Road, Farm Center, Kano, Nigeria
+            <td style="background:#fefdfb;padding:6px 22px 26px 22px;">
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;border-radius:14px;overflow:hidden;border:1px solid #d4c9b5;">
+                <tr>
+                  <td width="10" style="width:10px;background:#c45c3e;">&nbsp;</td>
+                  <td style="background:linear-gradient(165deg,#f6f1e8 0%,#ebe3d2 100%);padding:22px 20px 24px 20px;">
+                    <p style="margin:0 0 10px;font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#9e4328;font-weight:800;font-family:${sans};">Entry pass</p>
+                    <p style="margin:0 0 6px;font-size:12px;color:#4a443a;font-family:${sans};">Code</p>
+                    <p style="margin:0 0 18px;font-size:28px;font-weight:700;letter-spacing:0.1em;color:#1e3d2f;font-family:ui-monospace,Menlo,Consolas,monospace;line-height:1.1;">${safeCode}</p>
+                    <table cellpadding="0" cellspacing="0" role="presentation" style="border-collapse:separate;">
+                      <tr>
+                        <td style="background:#1e3d2f;color:#f6f1e8;padding:9px 18px;border-radius:999px;font-size:13px;font-weight:700;font-family:${sans};">${safeType} <span style="opacity:0.75;">·</span> N${safeAmt}</td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:20px 0 0;font-size:12px;line-height:1.55;color:#6b6358;text-align:center;font-family:${sans};">
+                No 2 Guda Abdullahi Road, Farm Center, Kano · <strong style="color:#4a443a;">Cavemen Africa</strong> · Consortium &amp; open-mic home
               </p>
             </td>
           </tr>
         </table>
+        <p style="margin:16px 0 0;font-size:11px;color:#7a6f62;font-family:${sans};text-align:center;max-width:480px;">Payment confirmed. Questions? <span style="color:#9e4328;">admin@cavemen.africa</span></p>
       </td>
     </tr>
   </table>
@@ -102,14 +130,14 @@ function buildTicketEmailText({
   return [
     `Hi ${recipientName},`,
     "",
-    `Your payment for ${eventName} was successful.`,
+    `Cavemen Africa | ${eventName}`,
+    "Studio of Studios · Kano, Northern Nigeria",
     "",
-    `Ticket code: ${ticketCode}`,
-    `Type: ${attendanceType} · N${amountNaira}`,
+    `Your entry pass: ${ticketCode}`,
+    `${attendanceType} · N${amountNaira} (paid)`,
     "",
-    "Please keep this email for your records.",
-    "",
-    "Cavemen Africa · Kano, Nigeria",
+    "No 2 Guda Abdullahi Road, Farm Center, Kano",
+    "admin@cavemen.africa",
   ].join("\n");
 }
 

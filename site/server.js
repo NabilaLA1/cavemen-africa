@@ -2,18 +2,48 @@ const http = require("node:http");
 const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
-const { DatabaseSync } = require("node:sqlite");
+
+(function loadSiteEnv() {
+  const envPath = path.join(__dirname, ".env");
+  if (!fs.existsSync(envPath)) {
+    return;
+  }
+  const text = fs.readFileSync(envPath, "utf8");
+  for (const line of text.split("\n")) {
+    const t = line.trim();
+    if (!t || t.startsWith("#")) {
+      continue;
+    }
+    const eq = t.indexOf("=");
+    if (eq === -1) {
+      continue;
+    }
+    const key = t.slice(0, eq).trim();
+    let value = t.slice(eq + 1).trim();
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+    if (key && process.env[key] === undefined) {
+      process.env[key] = value;
+    }
+  }
+})();
+
+const dbMysql = require("./lib/db-mysql");
+const db = dbMysql.isMySqlConfigured() ? dbMysql : require("./lib/db-sqlite");
 const {
   buildTicketEmailHtml,
   buildTicketEmailText,
   createMailTransport,
   sendTicketEmail,
 } = require("./lib/asali-email");
+const { buildAsaliTicketPdfBuffer } = require("./lib/asali-ticket-pdf");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 3000);
-const databasePath = path.join(root, "data", "cavemen.db");
-const productsSeedPath = path.join(root, "data", "kanti-products.json");
 const asaliPaymentLinksPath = path.join(root, "data", "asali-payment-links.json");
 
 const publicBaseUrl = String(process.env.PUBLIC_SITE_URL || `http://localhost:${port}`).replace(
@@ -21,6 +51,8 @@ const publicBaseUrl = String(process.env.PUBLIC_SITE_URL || `http://localhost:${
   "",
 );
 const eventNameDefault = process.env.ASALI_EVENT_NAME || "Asali Poetry Sessions 9.0";
+const asaliVenueLine =
+  process.env.ASALI_VENUE_LINE || "No 2 Guda Abdullahi Road, Farm Center, Kano, Nigeria";
 
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
@@ -40,7 +72,7 @@ const contentTypes = {
   ".woff2": "font/woff2",
 };
 
-fs.mkdirSync(path.dirname(databasePath), { recursive: true });
+fs.mkdirSync(path.join(root, "data"), { recursive: true });
 
 if (!fs.existsSync(asaliPaymentLinksPath)) {
   fs.writeFileSync(
@@ -55,191 +87,6 @@ if (!fs.existsSync(asaliPaymentLinksPath)) {
     ),
   );
 }
-
-const database = new DatabaseSync(databasePath);
-database.exec(`
-  CREATE TABLE IF NOT EXISTS kanti_products (
-    id TEXT PRIMARY KEY,
-    title TEXT NOT NULL,
-    short_description TEXT NOT NULL,
-    category TEXT NOT NULL,
-    image TEXT NOT NULL,
-    flutterwave_url TEXT NOT NULL,
-    is_active INTEGER NOT NULL DEFAULT 1,
-    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
-
-  CREATE TABLE IF NOT EXISTS asali_registrations (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    full_name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    email TEXT NOT NULL,
-    gender TEXT NOT NULL,
-    discovery TEXT NOT NULL,
-    attendance_type TEXT NOT NULL,
-    ticket_price_naira INTEGER NOT NULL DEFAULT 0,
-    notes TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-  );
-`);
-
-function ensureColumn(tableName, columnName, definition) {
-  const columns = database.prepare(`PRAGMA table_info(${tableName})`).all();
-  const hasColumn = columns.some((column) => column.name === columnName);
-
-  if (!hasColumn) {
-    database.exec(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${definition}`);
-  }
-}
-
-ensureColumn("asali_registrations", "ticket_price_naira", "INTEGER NOT NULL DEFAULT 0");
-ensureColumn("asali_registrations", "payment_status", "TEXT NOT NULL DEFAULT 'pending'");
-ensureColumn("asali_registrations", "tx_ref", "TEXT");
-ensureColumn("asali_registrations", "ticket_code", "TEXT");
-ensureColumn("asali_registrations", "flutterwave_transaction_id", "TEXT");
-ensureColumn("asali_registrations", "ticket_email_sent_at", "TEXT");
-
-function seedProducts() {
-  const raw = fs.readFileSync(productsSeedPath, "utf8");
-  const products = JSON.parse(raw);
-  const upsert = database.prepare(`
-    INSERT INTO kanti_products (
-      id,
-      title,
-      short_description,
-      category,
-      image,
-      flutterwave_url,
-      is_active,
-      updated_at
-    ) VALUES (
-      @id,
-      @title,
-      @shortDescription,
-      @category,
-      @image,
-      @flutterwaveUrl,
-      1,
-      CURRENT_TIMESTAMP
-    )
-    ON CONFLICT(id) DO UPDATE SET
-      title = excluded.title,
-      short_description = excluded.short_description,
-      category = excluded.category,
-      image = excluded.image,
-      flutterwave_url = excluded.flutterwave_url,
-      is_active = excluded.is_active,
-      updated_at = CURRENT_TIMESTAMP
-  `);
-
-  for (const product of products) {
-    upsert.run(product);
-  }
-}
-
-seedProducts();
-
-const selectProductsStatement = database.prepare(`
-  SELECT
-    id,
-    title,
-    short_description AS shortDescription,
-    category,
-    image,
-    flutterwave_url AS flutterwaveUrl
-  FROM kanti_products
-  WHERE is_active = 1
-    AND (@category IS NULL OR category = @category)
-  ORDER BY title COLLATE NOCASE
-`);
-
-const insertRegistrationStatement = database.prepare(`
-  INSERT INTO asali_registrations (
-    full_name,
-    phone,
-    email,
-    gender,
-    discovery,
-    attendance_type,
-    ticket_price_naira,
-    notes,
-    payment_status
-  ) VALUES (
-    @fullName,
-    @phone,
-    @email,
-    @gender,
-    @discovery,
-    @attendanceType,
-    @ticketPriceNaira,
-    @notes,
-    'pending'
-  )
-`);
-
-const updateRegistrationTxRefStatement = database.prepare(`
-  UPDATE asali_registrations SET tx_ref = @txRef WHERE id = @id
-`);
-
-const deleteRegistrationStatement = database.prepare(`
-  DELETE FROM asali_registrations WHERE id = @id
-`);
-
-const selectRegistrationByIdStatement = database.prepare(`
-  SELECT
-    id,
-    full_name AS fullName,
-    phone,
-    email,
-    gender,
-    discovery,
-    attendance_type AS attendanceType,
-    ticket_price_naira AS ticketPriceNaira,
-    notes,
-    payment_status AS paymentStatus,
-    tx_ref AS txRef,
-    ticket_code AS ticketCode,
-    flutterwave_transaction_id AS flutterwaveTransactionId,
-    ticket_email_sent_at AS ticketEmailSentAt
-  FROM asali_registrations
-  WHERE id = @id
-`);
-
-const selectRegistrationByTxRefStatement = database.prepare(`
-  SELECT
-    id,
-    full_name AS fullName,
-    phone,
-    email,
-    gender,
-    discovery,
-    attendance_type AS attendanceType,
-    ticket_price_naira AS ticketPriceNaira,
-    notes,
-    payment_status AS paymentStatus,
-    tx_ref AS txRef,
-    ticket_code AS ticketCode,
-    flutterwave_transaction_id AS flutterwaveTransactionId,
-    ticket_email_sent_at AS ticketEmailSentAt
-  FROM asali_registrations
-  WHERE tx_ref = @txRef
-`);
-
-const markRegistrationPaidStatement = database.prepare(`
-  UPDATE asali_registrations SET
-    payment_status = 'paid',
-    flutterwave_transaction_id = @flutterwaveTransactionId,
-    ticket_code = @ticketCode
-  WHERE id = @id
-`);
-
-const markTicketEmailSentStatement = database.prepare(`
-  UPDATE asali_registrations SET ticket_email_sent_at = CURRENT_TIMESTAMP WHERE id = @id
-`);
-
-const setTicketCodeStatement = database.prepare(`
-  UPDATE asali_registrations SET ticket_code = @ticketCode WHERE id = @id
-`);
 
 function sendJson(response, statusCode, payload) {
   response.writeHead(statusCode, { "Content-Type": "application/json; charset=utf-8" });
@@ -535,9 +382,9 @@ async function handleFlutterwaveWebhook(request, response) {
     Number.isInteger(registrationIdFromMeta) &&
     registrationIdFromMeta > 0;
 
-  let registration = selectRegistrationByTxRefStatement.get({ txRef });
+  let registration = await db.selectAsaliByTxRef(txRef);
   if (!registration && metaIdValid) {
-    const byId = selectRegistrationByIdStatement.get({ id: registrationIdFromMeta });
+    const byId = await db.selectAsaliById(registrationIdFromMeta);
     if (byId && byId.txRef === txRef) {
       registration = byId;
     }
@@ -557,23 +404,23 @@ async function handleFlutterwaveWebhook(request, response) {
   let ticketCode = registration.ticketCode || generateTicketCode(registration.id);
 
   if (registration.paymentStatus !== "paid") {
-    markRegistrationPaidStatement.run({
-      id: registration.id,
-      flutterwaveTransactionId: String(transactionId),
+    await db.markAsaliPaid(
+      registration.id,
+      String(transactionId),
       ticketCode,
-    });
+    );
   } else if (!registration.ticketCode) {
-    setTicketCodeStatement.run({ id: registration.id, ticketCode });
+    await db.setAsaliTicketCode(registration.id, ticketCode);
   }
 
-  registration = selectRegistrationByIdStatement.get({ id: registration.id });
-  registration.ticketCode = ticketCode;
+  let updated = await db.selectAsaliById(registration.id);
+  updated = { ...updated, ticketCode };
 
-  if (!registration.ticketEmailSentAt) {
+  if (!updated.ticketEmailSentAt) {
     try {
-      const sent = await sendTicketEmailIfPossible(registration);
+      const sent = await sendTicketEmailIfPossible(updated);
       if (sent) {
-        markTicketEmailSentStatement.run({ id: registration.id });
+        await db.markTicketEmailSent(registration.id);
       }
     } catch (error) {
       console.error("[asali] Ticket email failed:", error);
@@ -584,11 +431,13 @@ async function handleFlutterwaveWebhook(request, response) {
   return true;
 }
 
+const databaseMode = db.isMySqlConfigured() ? "mysql" : "sqlite";
+
 async function handleApi(request, response, url) {
   if (request.method === "GET" && url.pathname === "/api/health") {
     sendJson(response, 200, {
       ok: true,
-      database: "sqlite",
+      database: databaseMode,
       service: "cavemen-africa",
       flutterwaveApi: Boolean(process.env.FLUTTERWAVE_SECRET_KEY),
       smtp: Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS),
@@ -598,10 +447,78 @@ async function handleApi(request, response, url) {
 
   if (request.method === "GET" && url.pathname === "/api/products") {
     const category = normalizeOptionalText(url.searchParams.get("category"));
-    const products = selectProductsStatement.all({
-      category: category && category !== "all" ? category : null,
-    });
+    const products = await db.selectProducts(category);
     sendJson(response, 200, { products });
+    return true;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/asali-payment-status") {
+    const txRef = normalizeOptionalText(
+      url.searchParams.get("tx_ref") || url.searchParams.get("txRef"),
+    );
+    if (!txRef) {
+      sendJson(response, 400, { error: "tx_ref is required." });
+      return true;
+    }
+    const row = await db.selectAsaliByTxRef(txRef);
+    if (!row) {
+      sendJson(response, 404, { error: "Registration not found." });
+      return true;
+    }
+    const paid = row.paymentStatus === "paid";
+    const hasCode = Boolean(row.ticketCode);
+    const ticketReady = paid && hasCode;
+    sendJson(response, 200, {
+      status: paid ? "paid" : "pending",
+      eventName: eventNameDefault,
+      fullName: row.fullName,
+      attendanceType: row.attendanceType,
+      ticketPriceNaira: row.ticketPriceNaira,
+      ticketCode: row.ticketCode || null,
+      ticketReady,
+      pdfUrl: ticketReady
+        ? `/api/asali-ticket.pdf?tx_ref=${encodeURIComponent(txRef)}`
+        : null,
+    });
+    return true;
+  }
+
+  if (request.method === "GET" && url.pathname === "/api/asali-ticket.pdf") {
+    const txRef = normalizeOptionalText(
+      url.searchParams.get("tx_ref") || url.searchParams.get("txRef"),
+    );
+    if (!txRef) {
+      sendJson(response, 400, { error: "tx_ref is required." });
+      return true;
+    }
+    const row = await db.selectAsaliByTxRef(txRef);
+    if (!row || row.paymentStatus !== "paid" || !row.ticketCode) {
+      sendJson(response, 404, {
+        error:
+          "Ticket not available yet. If you just paid, wait a few seconds and try again, or use the link in your email.",
+      });
+      return true;
+    }
+    try {
+      const buffer = await buildAsaliTicketPdfBuffer({
+        fullName: row.fullName,
+        ticketCode: row.ticketCode,
+        attendanceType: row.attendanceType,
+        ticketPriceNaira: row.ticketPriceNaira,
+        eventName: eventNameDefault,
+        venueLine: asaliVenueLine,
+        txRef,
+      });
+      response.writeHead(200, {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": 'attachment; filename="cavemen-asali-ticket.pdf"',
+        "Cache-Control": "no-store",
+      });
+      response.end(buffer);
+    } catch (error) {
+      console.error("[asali] PDF generation failed:", error);
+      sendJson(response, 500, { error: "Could not generate ticket PDF." });
+    }
     return true;
   }
 
@@ -631,13 +548,12 @@ async function handleApi(request, response, url) {
     }
 
     const data = validation.data;
-    const insertResult = insertRegistrationStatement.run(data);
-    const registrationId = Number(insertResult.lastInsertRowid);
+    const registrationId = await db.insertAsaliRegistration(data);
     const txRef = `ASALI-${registrationId}-${Date.now()}`;
 
-    updateRegistrationTxRefStatement.run({ id: registrationId, txRef });
+    await db.updateAsaliTxRef(registrationId, txRef);
 
-    const thankYouUrl = `${publicBaseUrl}/asali-open-mic/register/thank-you/`;
+    const thankYouUrl = `${publicBaseUrl}/asali-open-mic/register/thank-you/?tx_ref=${encodeURIComponent(txRef)}`;
     let paymentUrl = null;
 
     if (process.env.FLUTTERWAVE_SECRET_KEY) {
@@ -656,7 +572,7 @@ async function handleApi(request, response, url) {
         });
       } catch (error) {
         console.error("[asali] Flutterwave init failed:", error);
-        deleteRegistrationStatement.run({ id: registrationId });
+        await db.deleteAsaliById(registrationId);
         sendJson(response, 502, {
           error:
             "Payment could not be started. Please try again in a moment or contact admin@cavemen.africa.",
@@ -667,7 +583,7 @@ async function handleApi(request, response, url) {
       const paymentLinks = getAsaliPaymentLinks();
       paymentUrl = normalizeOptionalText(paymentLinks[data.attendanceType]);
       if (!paymentUrl) {
-        deleteRegistrationStatement.run({ id: registrationId });
+        await db.deleteAsaliById(registrationId);
         sendJson(response, 503, {
           error: `Payment link not configured yet for ${data.attendanceType.toLowerCase()} tickets.`,
         });
@@ -756,14 +672,25 @@ const server = http.createServer(async (request, response) => {
   });
 });
 
-server.listen(port, () => {
-  console.log(`Cavemen site and API running at http://localhost:${port}`);
-  if (!process.env.FLUTTERWAVE_SECRET_KEY) {
-    console.warn(
-      "[asali] FLUTTERWAVE_SECRET_KEY not set — using asali-payment-links.json (webhook ticket emails need API-initiated payments).",
-    );
-  }
-  if (!process.env.FLUTTERWAVE_SECRET_HASH) {
-    console.warn("[asali] FLUTTERWAVE_SECRET_HASH not set — POST /api/webhooks/flutterwave will return 503.");
-  }
-});
+db
+  .init()
+  .then(() => {
+    server.listen(port, () => {
+      console.log(`Cavemen site and API running at http://localhost:${port}`);
+      console.log(`[db] ${databaseMode}`);
+      if (!process.env.FLUTTERWAVE_SECRET_KEY) {
+        console.warn(
+          "[asali] FLUTTERWAVE_SECRET_KEY not set — using asali-payment-links.json (webhook ticket emails need API-initiated payments).",
+        );
+      }
+      if (!process.env.FLUTTERWAVE_SECRET_HASH) {
+        console.warn(
+          "[asali] FLUTTERWAVE_SECRET_HASH not set — POST /api/webhooks/flutterwave will return 503.",
+        );
+      }
+    });
+  })
+  .catch((err) => {
+    console.error("[db] Failed to initialize database:", err.message || err);
+    process.exit(1);
+  });
