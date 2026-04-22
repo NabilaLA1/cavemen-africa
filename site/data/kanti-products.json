@@ -1,0 +1,74 @@
+[
+  {
+    "id": "beaded-cuff",
+    "title": "Hand-beaded cuff",
+    "shortDescription": "Glass beads on soft leather, one size adjustable.",
+    "category": "crafts",
+    "image": "https://images.unsplash.com/photo-1610701596003-11508751ff2d?w=800&q=80",
+    "flutterwaveUrl": "https://flutterwave.com/pay/cavemen-kanti-beaded-cuff"
+  },
+  {
+    "id": "woven-tote",
+    "title": "Market-day woven tote",
+    "shortDescription": "Natural fibres, reinforced straps, earth tones.",
+    "category": "crafts",
+    "image": "https://images.unsplash.com/photo-1590874103328-eac38a683ce7?w=800&q=80",
+    "flutterwaveUrl": "https://flutterwave.com/pay/cavemen-kanti-woven-tote"
+  },
+  {
+    "id": "logo-tee",
+    "title": "Cavemen Africa tee",
+    "shortDescription": "Heavyweight cotton, unisex cut, limited run.",
+    "category": "merch",
+    "image": "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
+    "flutterwaveUrl": "https://flutterwave.com/pay/cavemen-kanti-logo-tee"
+  },
+  {
+    "id": "asali-poster",
+    "title": "Asali Open Mic risograph poster",
+    "shortDescription": "A3 art print from a past night of verse.",
+    "category": "merch",
+    "image": "https://images.unsplash.com/photo-1513364776144-60967b0f800f?w=800&q=80",
+    "flutterwaveUrl": "https://flutterwave.com/pay/cavemen-kanti-asali-poster"
+  },
+  {
+    "id": "poetry-pack",
+    "title": "Digital poetry workbook",
+    "shortDescription": "PDF prompts + revision checklist for new writers.",
+    "category": "digital",
+    "image": "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&q=80",
+    "flutterwaveUrl": "https://flutterwave.com/pay/cavemen-kanti-poetry-pack"
+  },
+  {
+    "id": "sample-pack",
+    "title": "Producer sample pack — Sahel textures",
+    "shortDescription": "Royalty-free loops and field recordings.",
+    "category": "digital",
+    "image": "https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=800&q=80",
+    "flutterwaveUrl": "https://flutterwave.com/pay/cavemen-kanti-sample-pack"
+  },
+  {
+    "id": "oil-study",
+    "title": "Original oil study — “Twilight Market”",
+    "shortDescription": "30×40 cm, signed, ships with certificate.",
+    "category": "art",
+    "image": "https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?w=800&q=80",
+    "flutterwaveUrl": "https://flutterwave.com/pay/cavemen-kanti-oil-study"
+  },
+  {
+    "id": "linocut",
+    "title": "Limited linocut print",
+    "shortDescription": "Edition of 40, archival ink on cotton paper.",
+    "category": "art",
+    "image": "https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=800&q=80",
+    "flutterwaveUrl": "https://flutterwave.com/pay/cavemen-kanti-linocut"
+  },
+  {
+    "id": "zine-bundle",
+    "title": "Community zine bundle",
+    "shortDescription": "Three issues featuring emerging poets and illustrators.",
+    "category": "other",
+    "image": "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=800&q=80",
+    "flutterwaveUrl": "https://flutterwave.com/pay/cavemen-kanti-zine-bundle"
+  }
+]
