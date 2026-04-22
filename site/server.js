@@ -553,7 +553,7 @@ async function handleApi(request, response, url) {
 
     await db.updateAsaliTxRef(registrationId, txRef);
 
-    const thankYouUrl = `${publicBaseUrl}/asali-open-mic/register/thank-you/?tx_ref=${encodeURIComponent(txRef)}`;
+    const thankYouUrl = `${publicBaseUrl}/asali/register/thank-you/?tx_ref=${encodeURIComponent(txRef)}`;
     let paymentUrl = null;
 
     if (process.env.FLUTTERWAVE_SECRET_KEY) {
@@ -610,6 +610,28 @@ async function handleApi(request, response, url) {
   return false;
 }
 
+/**
+ * 301 for bookmarks and shared links that still use /asali-open-mic/…
+ * @returns {boolean} true if a redirect was sent
+ */
+function maybeRedirectLegacyAsaliPath(request, response, url) {
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return false;
+  }
+  const p = url.pathname;
+  if (!p.startsWith("/asali-open-mic")) {
+    return false;
+  }
+  const tail =
+    p === "/asali-open-mic" || p === "/asali-open-mic/"
+      ? ""
+      : p.slice("/asali-open-mic/".length);
+  const location = "/asali/" + tail + (url.search || "");
+  response.writeHead(301, { Location: location });
+  response.end();
+  return true;
+}
+
 function resolvePath(urlPath) {
   const cleanPath = decodeURIComponent(urlPath.split("?")[0]);
   const requestedPath = cleanPath === "/" ? "/index.html" : cleanPath;
@@ -638,6 +660,10 @@ function resolvePath(urlPath) {
 
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url || "/", `http://${request.headers.host || "localhost"}`);
+
+  if (maybeRedirectLegacyAsaliPath(request, response, url)) {
+    return;
+  }
 
   try {
     const handled = await handleApi(request, response, url);

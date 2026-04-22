@@ -24,10 +24,10 @@ export function SiteFooter() {
             <ul className="flex flex-col gap-2 text-[var(--color-cream)]/85">
               <li>
                 <Link
-                  href="/asali-open-mic"
+                  href="/asali"
                   className="underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-terracotta)]"
                 >
-                  Asali Open Mic
+                  Asali Poetry Sessions
                 </Link>
               </li>
               <li>

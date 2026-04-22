@@ -3,22 +3,22 @@ import Link from "next/link";
 import { siteConfig } from "@/lib/site-config";
 
 const pageDescription =
-  "Asali is where raw voices rise—a mic, a stage, and the stories we carry. Open mic nights at Cavemen Africa in Kano.";
+  "Asali is where raw voices rise—a mic, a stage, and the stories we carry. Poetry sessions at Cavemen Africa in Kano.";
 
 export const metadata: Metadata = {
-  title: "Asali Open Mic",
+  title: "Asali Poetry Sessions",
   description: pageDescription,
   openGraph: {
-    title: `Asali Open Mic · ${siteConfig.name}`,
+    title: `Asali Poetry Sessions · ${siteConfig.name}`,
     description: pageDescription,
-    url: "/asali-open-mic",
+    url: "/asali",
   },
 };
 
 const eventJsonLd = {
   "@context": "https://schema.org",
   "@type": "Event",
-  name: "Asali Open Mic",
+  name: "Asali Poetry Sessions",
   description: pageDescription,
   eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
   eventStatus: "https://schema.org/EventScheduled",
@@ -42,7 +42,7 @@ const eventJsonLd = {
     price: "0",
     priceCurrency: "USD",
     availability: "https://schema.org/InStock",
-    url: `${siteConfig.url}/asali-open-mic`,
+    url: `${siteConfig.url}/asali`,
   },
 };
 
@@ -53,7 +53,7 @@ const faqs = [
   },
   {
     q: "How long is each performance?",
-    a: "Most open-mic slots are around five minutes. Featured sets may run longer—check the monthly post for details.",
+    a: "Most performance slots are around five minutes. Featured sets may run longer—check the monthly post for details.",
   },
   {
     q: "Is the event only for poetry?",
@@ -65,7 +65,7 @@ const faqs = [
   },
 ];
 
-export default function AsaliOpenMicPage() {
+export default function AsaliPoetrySessionsPage() {
   return (
     <>
       <script
@@ -79,7 +79,7 @@ export default function AsaliOpenMicPage() {
               Community event
             </p>
             <h1 className="mt-4 font-serif text-4xl font-semibold tracking-tight text-[var(--color-ink)] sm:text-5xl">
-              Asali Open Mic
+              Asali Poetry Sessions
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-[var(--color-ink-muted)]">
               Asali is where raw voices rise. A mic, a stage, and the stories we
@@ -89,7 +89,7 @@ export default function AsaliOpenMicPage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <a
-                href={`mailto:${siteConfig.contactEmail}?subject=Asali%20Open%20Mic%20RSVP`}
+                href={`mailto:${siteConfig.contactEmail}?subject=Asali%20Poetry%20Sessions%20RSVP`}
                 className="inline-flex items-center justify-center rounded-full bg-[var(--color-terracotta)] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[var(--color-terracotta-dark)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-forest)]"
               >
                 RSVP by email

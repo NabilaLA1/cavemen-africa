@@ -8,7 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   return [
     { url: `${base}/`, lastModified, changeFrequency: "monthly", priority: 1 },
     {
-      url: `${base}/asali-open-mic`,
+      url: `${base}/asali`,
       lastModified,
       changeFrequency: "weekly",
       priority: 0.9,

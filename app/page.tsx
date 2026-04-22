@@ -107,10 +107,10 @@ export default function HomePage() {
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
               <Link
-                href="/asali-open-mic"
+                href="/asali"
                 className="inline-flex items-center justify-center rounded-full bg-[var(--color-terracotta)] px-6 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--color-terracotta-dark)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-forest)]"
               >
-                Asali Open Mic
+                Asali Poetry Sessions
               </Link>
               <Link
                 href="/kanti"
@@ -136,10 +136,10 @@ export default function HomePage() {
           </div>
           <div className="mt-10 flex flex-wrap gap-3">
             <Link
-              href="/asali-open-mic"
+              href="/asali"
               className="inline-flex text-sm font-semibold text-[var(--color-terracotta-dark)] underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-forest)]"
             >
-              Asali Open Mic
+              Asali Poetry Sessions
             </Link>
             <span className="text-[var(--color-border)]" aria-hidden>
               ·

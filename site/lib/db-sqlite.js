@@ -91,6 +91,9 @@ async function init() {
 
   const raw = fs.readFileSync(productsSeedPath, "utf8");
   const products = JSON.parse(raw);
+  if (!Array.isArray(products)) {
+    return;
+  }
   const upsert = db.prepare(`
     INSERT INTO kanti_products (
       id,

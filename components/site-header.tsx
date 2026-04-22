@@ -18,8 +18,8 @@ export function SiteHeader() {
           <Link href="/" className={navLinkClass}>
             Home
           </Link>
-          <Link href="/asali-open-mic" className={navLinkClass}>
-            Asali Open Mic
+          <Link href="/asali" className={navLinkClass}>
+            Asali Poetry Sessions
           </Link>
           <Link href="/kanti" className={navLinkClass}>
             Kanti

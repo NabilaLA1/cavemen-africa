@@ -660,7 +660,7 @@ function cavemen_handle_api_asali_registrations_post()
     $upd = $pdo->prepare('UPDATE asali_registrations SET tx_ref = :tx WHERE id = :id');
     $upd->execute([':tx' => $txRef, ':id' => $registrationId]);
 
-    $thankYou = cavemen_public_base_url() . '/asali-open-mic/register/thank-you/?tx_ref=' . rawurlencode($txRef);
+    $thankYou = cavemen_public_base_url() . '/asali/register/thank-you/?tx_ref=' . rawurlencode($txRef);
     $paymentUrl = null;
     if ((string) cavemen_env('FLUTTERWAVE_SECRET_KEY', '') !== '') {
         try {

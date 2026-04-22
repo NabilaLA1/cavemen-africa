@@ -96,11 +96,11 @@ export const upcomingEvents: UpcomingEvent[] = [
     ctaLabel: "Register",
   },
   {
-    title: "Asali Open Mic",
+    title: "Asali Poetry Sessions",
     dateLabel: "Recurring at Cavemen Africa, Kano",
     description:
       "Asali is where raw voices rise—a mic, a stage, and the stories we carry. We close each season with the community that has grown the room; check the event page for the next date.",
-    href: "/asali-open-mic",
+    href: "/asali",
     ctaLabel: "Event details",
   },
   {
@@ -117,7 +117,7 @@ export type ImpactStat = { value: string; label: string };
 
 export const impactStats: ImpactStat[] = [
   { value: "4", label: "Consortium partner organisations" },
-  { value: "6+", label: "Seasons of Asali Open Mic to date" },
+  { value: "6+", label: "Seasons of Asali Poetry Sessions to date" },
   {
     value: "7+",
     label: "Years working with high-impact organisations (Impact-X)",

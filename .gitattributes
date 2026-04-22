@@ -1,0 +1,10 @@
+# Normalize line endings; keep text files LF in the repo
+* text=auto
+
+*.{ts,tsx,js,jsx,mjs,cjs,json,html,css,scss,md,mdx,yml,yaml} text eol=lf
+*.{sh,bash} text eol=lf
+*.{php} text eol=lf
+*.{svg} text eol=lf
+
+# Binary
+*.{png,jpg,jpeg,gif,ico,webp,woff,woff2,otf,ttf,eot,pdf} binary

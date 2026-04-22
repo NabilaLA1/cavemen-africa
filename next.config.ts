@@ -6,6 +6,20 @@ import type { NextConfig } from "next";
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: "/asali-open-mic",
+        destination: "/asali",
+        permanent: true,
+      },
+      {
+        source: "/asali-open-mic/:path*",
+        destination: "/asali/:path*",
+        permanent: true,
+      },
+    ];
+  },
   turbopack: {
     root: projectRoot,
   },

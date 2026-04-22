@@ -6,6 +6,10 @@
   RewriteEngine On
   # RewriteBase /
 
+  # Old path → canonical /asali/ (permanent)
+  RewriteRule ^asali-open-mic/?$ /asali/ [R=301,L]
+  RewriteRule ^asali-open-mic/(.+)$ /asali/$1 [R=301,L]
+
   # Pretty API URLs
   RewriteRule ^api/health$ api/health.php [L,QSA]
   RewriteRule ^api/products$ api/products.php [L,QSA]

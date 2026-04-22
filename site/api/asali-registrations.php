@@ -2,7 +2,7 @@
 
 require __DIR__ . '/common.php';
 
-if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
     cavemen_json_response(405, ['error' => 'Method not allowed']);
     exit;
 }

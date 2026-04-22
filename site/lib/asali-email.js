@@ -78,7 +78,7 @@ function buildTicketEmailHtml({
                 </tr>
               </table>
               <p style="margin:20px 0 0;font-size:12px;line-height:1.55;color:#6b6358;text-align:center;font-family:${sans};">
-                No 2 Guda Abdullahi Road, Farm Center, Kano · <strong style="color:#4a443a;">Cavemen Africa</strong> · Consortium &amp; open-mic home
+                No 2 Guda Abdullahi Road, Farm Center, Kano · <strong style="color:#4a443a;">Cavemen Africa</strong> · Consortium &amp; Asali home
               </p>
             </td>
           </tr>
