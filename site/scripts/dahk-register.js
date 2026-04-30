@@ -1,4 +1,4 @@
-const registrationForm = document.querySelector("[data-asali-registration-form]");
+const registrationForm = document.querySelector("[data-dahk-registration-form]");
 const registrationStatus = document.querySelector("[data-registration-status]");
 
 if (registrationForm && registrationStatus) {
@@ -25,7 +25,7 @@ if (registrationForm && registrationStatus) {
     }
 
     try {
-      const response = await fetch("/api/asali-registrations", {
+      const response = await fetch("/api/dahk-registrations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

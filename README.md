@@ -1,41 +1,29 @@
-<<<<<<< HEAD
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# cavemen-africa
 
-## Getting Started
+Static site and **PHP APIs** for shared hosting (cPanel + Apache). There is no Node.js backend in this tree.
 
-First, run the development server:
+## Deploy to cPanel
+
+From the repository root:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run package:cpanel
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Upload the **contents** of `dist-cpanel-php/` to your document root (e.g. `public_html/`), then on the server:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+composer install --no-dev --optimize-autoloader
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Configure MySQL and API keys in a new `.env` on the server (do not copy a local secrets file blindly). See `site/sql/schema-mysql.sql` for the database layout.
 
-## Learn More
+## Local preview (optional)
 
-To learn more about Next.js, take a look at the following resources:
+Serve the `site/` folder with PHP’s built-in server from inside `site/`:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+cd site && php -S localhost:8080
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# cavemen-africa
-=======
-# cavemen-africa
->>>>>>> c22feef37ae4af89c95cb318b8d0327f30e6649b
+Apache rewrite rules for `/api/*` live in `site/.htaccess`; production on cPanel should use Apache, not the PHP CLI server, for full behavior.

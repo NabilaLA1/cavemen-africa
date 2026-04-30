@@ -45,7 +45,7 @@ class AsaliTicketPdfHtml
     <div style="color:#9e4328;font-size:7.5pt;font-weight:bold;letter-spacing:0.12em;">ENTRY PASS</div>
     <div style="color:#4a443a;font-size:9pt;margin-top:6px;">Code</div>
     <div class="code">' . $code . '</div>
-    <div class="pill">' . $type . ' · N' . $amount . '</div>
+    <div class="pill">' . $type . ' · ₦' . $amount . '</div>
   </div>
   <p class="foot">' . $venue . '</p>
   <p class="ref">Reference: ' . $ref . '</p>

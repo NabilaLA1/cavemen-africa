@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
-# Build a minimal folder for cPanel when you use Apache + PHP (typical shared hosting).
-# Omits Node (server.js), Node DB layers, and nodemailer/pdfkit JS — your PHP API + Dompdf + PHPMailer cover that.
+# Copy `site/` into dist-cpanel-php/ for cPanel (Apache + PHP). Excludes are in deploy/cpanel-site-excludes.txt.
 #
-# How to RUN (from project root — "cat" only prints the file; it does not execute):
+# From project root:
 #   npm run package:cpanel
 #   bash scripts/package-cpanel-php.sh
-#   ./scripts/package-cpanel-php.sh
 set -euo pipefail
 
 if ! command -v rsync >/dev/null 2>&1; then

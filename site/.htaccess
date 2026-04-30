@@ -16,5 +16,8 @@
   RewriteRule ^api/asali-registrations$ api/asali-registrations.php [L,QSA]
   RewriteRule ^api/asali-payment-status$ api/asali-payment-status.php [L,QSA]
   RewriteRule ^api/asali-ticket\.pdf$ api/asali-ticket-pdf.php [L,QSA]
+  RewriteRule ^api/dahk-registrations$ api/dahk-registrations.php [L,QSA]
+  RewriteRule ^api/dahk-payment-status$ api/dahk-payment-status.php [L,QSA]
+  RewriteRule ^api/dahk-ticket\.pdf$ api/dahk-ticket-pdf.php [L,QSA]
   RewriteRule ^api/webhooks/flutterwave$ api/webhooks/flutterwave.php [L,QSA]
 </IfModule>

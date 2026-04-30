@@ -3,19 +3,11 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kanti marketplace · Cavemen Africa</title>
+    <title>Payment · DAHK: The Experience · Cavemen Africa</title>
     <meta
       name="description"
-      content="Kanti is Cavemen Africa's online marketplace for crafts, merch, digital products, art, and more, checkout via Flutterwave."
+      content="After payment, you will receive a confirmation email with your ticket code from Cavemen Africa."
     >
-    <meta property="og:title" content="Kanti marketplace · Cavemen Africa">
-    <meta
-      property="og:description"
-      content="Kanti is Cavemen Africa's online marketplace for crafts, merch, digital products, art, and more, checkout via Flutterwave."
-    >
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://cavemen.africa/kanti/">
-    <meta name="twitter:card" content="summary_large_image">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
@@ -46,26 +38,47 @@
 
       <main id="main-content" class="site-main">
         <section class="hero">
-          <div class="container hero__inner">
-            <p class="eyebrow">Marketplace</p>
-            <h1 class="page-title">Kanti</h1>
-            <p class="hero__lead">
-              Browse crafts, merch, digital releases, and art from the Cavemen Africa
-              circle. Each piece links out to a Flutterwave payment page managed by the
-              collective.
+          <div class="container hero__inner form-shell">
+            <a class="back-link" href="/dahk-seasons/register/">&larr; Back to registration</a>
+            <p class="eyebrow">DAHK: The Experience</p>
+            <h1 class="page-title">Thank you</h1>
+            <p class="hero__lead" data-thankyou-status>
+              If your payment was successful, you can download your ticket as a PDF below. We
+              will also email your ticket code to the address you used when you registered.
             </p>
-          </div>
-        </section>
-
-        <section class="section section--tight">
-          <div class="container">
-            <div class="pill-row" data-kanti-categories aria-label="Product categories"></div>
-          </div>
-        </section>
-
-        <section class="section" style="padding-top: 0;">
-          <div class="container">
-            <div data-kanti-products></div>
+            <p class="body-copy" data-thankyou-poll-note>
+              If the button is not ready yet, wait a few seconds while we confirm your payment.
+            </p>
+            <div
+              class="status-card is-visible"
+              data-thankyou-download
+              id="thankyou-ticket"
+              style="max-width: 32rem; margin-top: 1.25rem"
+              hidden
+            >
+              <p style="margin: 0 0 0.75rem; font-weight: 600; color: var(--color-forest)">
+                Your ticket
+              </p>
+              <p class="field-note" style="margin-bottom: 1rem">
+                Download a PDF to your phone to show at the door (same details as the confirmation
+                email).
+              </p>
+              <a
+                class="button"
+                data-ticket-pdf-link
+                href="#"
+                download
+              >Download ticket (PDF)</a>
+            </div>
+            <p class="body-copy" style="margin-top: 1.5rem">
+              Did not receive an email? Check spam or promotions, then contact
+              <a class="text-link" href="mailto:info@cavemen.africa">info@cavemen.africa</a>
+              with the phone number you registered with.
+            </p>
+            <div class="button-row" style="margin-top: 1.5rem">
+              <a class="button" href="/dahk-seasons/">Event page</a>
+              <a class="button-secondary" href="/">Home</a>
+            </div>
           </div>
         </section>
       </main>
@@ -84,8 +97,9 @@
               <h4 class="site-footer__heading">Explore</h4>
               <ul class="site-footer__list">
                 <li><a href="/">Home</a></li>
-                <li><a href="/asali/">Asali Poetry Sessions</a></li>
                 <li><a href="/dahk-seasons/">DAHK</a></li>
+                <li><a href="/asali/">Asali Poetry Sessions</a></li>
+                <li><a href="/kanti/">Kanti marketplace</a></li>
               </ul>
             </nav>
             <section class="site-footer__col">
@@ -117,6 +131,6 @@
       </footer>
     </div>
     <script src="/scripts/site.js"></script>
-    <script src="/scripts/kanti.js"></script>
+    <script src="/scripts/dahk-thank-you.js" defer></script>
   </body>
 </html>

@@ -1,7 +1,7 @@
 <?php
 
 /**
- * HTML/plain ticket email (mirrors site/lib/asali-email.js for PHP / PHPMailer).
+ * HTML/plain ticket email for PHPMailer (Asali ticket flow).
  */
 class AsaliEmailPhp
 {
@@ -67,7 +67,7 @@ class AsaliEmailPhp
                     <p style=\"margin:0 0 18px;font-size:28px;font-weight:700;letter-spacing:0.1em;color:#1e3d2f;font-family:ui-monospace,Menlo,Consolas,monospace;line-height:1.1;\">{$safeCode}</p>
                     <table cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"border-collapse:separate;\">
                       <tr>
-                        <td style=\"background:#1e3d2f;color:#f6f1e8;padding:9px 18px;border-radius:999px;font-size:13px;font-weight:700;font-family:{$sans};\">{$safeType} <span style=\"opacity:0.75;\">&middot;</span> N{$safeAmt}</td>
+                        <td style=\"background:#1e3d2f;color:#f6f1e8;padding:9px 18px;border-radius:999px;font-size:13px;font-weight:700;font-family:{$sans};\">{$safeType} <span style=\"opacity:0.75;\">&middot;</span> ₦{$safeAmt}</td>
                       </tr>
                     </table>
                   </td>
@@ -96,7 +96,7 @@ class AsaliEmailPhp
             'Studio of Studios · Kano, Northern Nigeria',
             '',
             "Your entry pass: {$ticketCode}",
-            "{$attendanceType} · N{$amountNaira} (paid)",
+            "{$attendanceType} · ₦{$amountNaira} (paid)",
             '',
             'No 2 Guda Abdullahi Road, Farm Center, Kano',
             'info@cavemen.africa',

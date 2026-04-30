@@ -2,7 +2,7 @@
 
 /**
  * Shared PHP API (cPanel): MySQL (when MYSQL_* is set) or SQLite, Flutterwave, ticket email.
- * Endpoints: health, products, asali-registrations, webhooks/flutterwave
+ * Endpoints: health, products, asali-registrations, dahk-registrations, webhooks/flutterwave
  */
 
 if (!defined('CAVEMEN_API_BOOTSTRAP')) {
@@ -70,6 +70,26 @@ function cavemen_public_base_url()
 function cavemen_event_name()
 {
     return cavemen_env('ASALI_EVENT_NAME', 'Asali Poetry Sessions 9.0');
+}
+
+function cavemen_dahk_event_name()
+{
+    return cavemen_env('DAHK_SEASONS_EVENT_NAME', 'DAHK: The Experience');
+}
+
+function cavemen_dahk_venue_line()
+{
+    return cavemen_env(
+        'DAHK_SEASONS_VENUE_LINE',
+        'No 2 Guda Abdullahi Road, Farm Center, Kano, Nigeria'
+    );
+}
+
+function cavemen_dahk_ticket_types()
+{
+    return [
+        'DAHK Package' => ['ticketPriceNaira' => 20000],
+    ];
 }
 
 function cavemen_json_response($statusCode, $data)
@@ -183,6 +203,27 @@ CREATE TABLE IF NOT EXISTS asali_registrations (
   KEY idx_asali_email (email(191))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ');
+    $pdo->exec('
+CREATE TABLE IF NOT EXISTS dahk_seasons_registrations (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  full_name VARCHAR(255) NOT NULL,
+  phone VARCHAR(64) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  gender VARCHAR(64) NOT NULL,
+  discovery VARCHAR(512) NOT NULL,
+  attendance_type VARCHAR(32) NOT NULL,
+  ticket_price_naira INT UNSIGNED NOT NULL DEFAULT 0,
+  notes TEXT NULL,
+  payment_status VARCHAR(24) NOT NULL DEFAULT \'pending\',
+  tx_ref VARCHAR(128) NULL,
+  ticket_code VARCHAR(64) NULL,
+  flutterwave_transaction_id VARCHAR(128) NULL,
+  ticket_email_sent_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_dahk_tx_ref (tx_ref),
+  KEY idx_dahk_email (email(191))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+');
 }
 
 function cavemen_init_db_sqlite(PDO $pdo)
@@ -211,10 +252,36 @@ function cavemen_init_db_sqlite(PDO $pdo)
     notes TEXT,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE IF NOT EXISTS dahk_seasons_registrations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    full_name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    email TEXT NOT NULL,
+    gender TEXT NOT NULL,
+    discovery TEXT NOT NULL,
+    attendance_type TEXT NOT NULL,
+    ticket_price_naira INTEGER NOT NULL DEFAULT 0,
+    notes TEXT,
+    payment_status TEXT NOT NULL DEFAULT \'pending\',
+    tx_ref TEXT,
+    ticket_code TEXT,
+    flutterwave_transaction_id TEXT,
+    ticket_email_sent_at TEXT,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
 ');
 
     $tables = [
         'asali_registrations' => [
+            ['ticket_price_naira', "INTEGER NOT NULL DEFAULT 0"],
+            ['payment_status', "TEXT NOT NULL DEFAULT 'pending'"],
+            ['tx_ref', 'TEXT'],
+            ['ticket_code', 'TEXT'],
+            ['flutterwave_transaction_id', 'TEXT'],
+            ['ticket_email_sent_at', 'TEXT'],
+        ],
+        'dahk_seasons_registrations' => [
             ['ticket_price_naira', "INTEGER NOT NULL DEFAULT 0"],
             ['payment_status', "TEXT NOT NULL DEFAULT 'pending'"],
             ['tx_ref', 'TEXT'],
@@ -328,6 +395,44 @@ function cavemen_validate_registration($payload)
     ];
 }
 
+function cavemen_validate_dahk_registration($payload)
+{
+    if (!is_array($payload)) {
+        $payload = [];
+    }
+    $fullName = trim((string) ($payload['fullName'] ?? ''));
+    $phone = trim((string) ($payload['phone'] ?? ''));
+    $email = trim((string) ($payload['email'] ?? ''));
+    $gender = trim((string) ($payload['gender'] ?? ''));
+    $discovery = trim((string) ($payload['discovery'] ?? ''));
+    $attendanceType = trim((string) ($payload['attendanceType'] ?? ''));
+    $notes = cavemen_normalize_optional($payload['notes'] ?? '');
+
+    if ($fullName === '' || $phone === '' || $email === '' || $gender === '' || $discovery === '' || $attendanceType === '') {
+        return ['error' => 'Please complete all required fields.'];
+    }
+    if (strpos($email, '@') === false) {
+        return ['error' => 'Please enter a valid email address.'];
+    }
+    $types = cavemen_dahk_ticket_types();
+    if (!array_key_exists($attendanceType, $types)) {
+        return ['error' => 'Please select a valid ticket type.'];
+    }
+
+    return [
+        'data' => [
+            'fullName' => $fullName,
+            'phone' => $phone,
+            'email' => $email,
+            'gender' => $gender,
+            'discovery' => $discovery,
+            'attendanceType' => $attendanceType,
+            'ticketPriceNaira' => $types[$attendanceType]['ticketPriceNaira'],
+            'notes' => $notes,
+        ],
+    ];
+}
+
 function cavemen_meta_to_object($meta)
 {
     if ($meta === null) {
@@ -366,6 +471,39 @@ function cavemen_generate_ticket_code($registrationId)
     return "ASALI9-{$registrationId}-{$suffix}";
 }
 
+function cavemen_generate_dahk_ticket_code($registrationId)
+{
+    $suffix = strtoupper(bin2hex(random_bytes(4)));
+    return "DAHKS-{$registrationId}-{$suffix}";
+}
+
+/**
+ * @return 'asali_registrations'|'dahk_seasons_registrations'
+ */
+function cavemen_registration_table_for_txref($txRef)
+{
+    return strpos((string) $txRef, 'DAHK-') === 0 ? 'dahk_seasons_registrations' : 'asali_registrations';
+}
+
+/**
+ * @return ?array<string,mixed>
+ */
+function cavemen_fetch_registration_row_from_table(PDO $pdo, $table, $txRef)
+{
+    $allowed = ['asali_registrations', 'dahk_seasons_registrations'];
+    if (!in_array($table, $allowed, true)) {
+        throw new InvalidArgumentException('Invalid registration table');
+    }
+    $stmt = $pdo->prepare("SELECT * FROM {$table} WHERE tx_ref = :tx");
+    $stmt->execute([':tx' => $txRef]);
+    $row = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$row) {
+        return null;
+    }
+
+    return cavemen_registration_row($row);
+}
+
 /**
  * @return array{ok: bool, data?: array, error?: string}
  */
@@ -399,14 +537,15 @@ function cavemen_http_post_json($url, $headers, $body, $bearer = null)
 /**
  * @return string|null
  */
-function cavemen_flutterwave_init_payment($txRef, $amountNaira, $customer, $redirectUrl, $registrationId, $attendanceType)
+function cavemen_flutterwave_init_payment($txRef, $amountNaira, $customer, $redirectUrl, $registrationId, $attendanceType, array $flow = [])
 {
     $secret = cavemen_env('FLUTTERWAVE_SECRET_KEY');
     if ($secret === null || $secret === '') {
         return null;
     }
     $publicBase = cavemen_public_base_url();
-    $event = cavemen_event_name();
+    $eventTitle = isset($flow['eventTitle']) ? (string) $flow['eventTitle'] : cavemen_event_name();
+    $metaEvent = isset($flow['metaEvent']) ? (string) $flow['metaEvent'] : 'asali';
     $payload = [
         'tx_ref' => $txRef,
         'amount' => (string) $amountNaira,
@@ -419,13 +558,14 @@ function cavemen_flutterwave_init_payment($txRef, $amountNaira, $customer, $redi
             'name' => $customer['name'],
         ],
         'customizations' => [
-            'title' => $event,
+            'title' => $eventTitle,
             'description' => 'Ticket payment — Cavemen Africa',
             'logo' => $publicBase . '/assets/cavemen-logo.png',
         ],
         'meta' => [
             ['metaname' => 'registration_id', 'metavalue' => (string) $registrationId],
             ['metaname' => 'attendance_type', 'metavalue' => $attendanceType],
+            ['metaname' => 'cavemen_event', 'metavalue' => $metaEvent],
         ],
     ];
     $res = cavemen_http_post_json(
@@ -478,16 +618,23 @@ function cavemen_flutterwave_verify_transaction($transactionId)
 }
 
 /**
+ * @param 'asali_registrations'|'dahk_seasons_registrations' $table
+ *
  * @return ?array<string,mixed>
  */
-function cavemen_fetch_registration_by_id(PDO $pdo, $id)
+function cavemen_fetch_registration_by_id(PDO $pdo, $id, $table = 'asali_registrations')
 {
-    $stmt = $pdo->prepare('SELECT * FROM asali_registrations WHERE id = :id');
+    $allowed = ['asali_registrations', 'dahk_seasons_registrations'];
+    if (!in_array($table, $allowed, true)) {
+        throw new InvalidArgumentException('Invalid registration table');
+    }
+    $stmt = $pdo->prepare("SELECT * FROM {$table} WHERE id = :id");
     $stmt->execute([':id' => $id]);
     $row = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$row) {
         return null;
     }
+
     return cavemen_registration_row($row);
 }
 
@@ -496,13 +643,9 @@ function cavemen_fetch_registration_by_id(PDO $pdo, $id)
  */
 function cavemen_fetch_registration_by_txref(PDO $pdo, $txRef)
 {
-    $stmt = $pdo->prepare('SELECT * FROM asali_registrations WHERE tx_ref = :tx');
-    $stmt->execute([':tx' => $txRef]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    if (!$row) {
-        return null;
-    }
-    return cavemen_registration_row($row);
+    $table = cavemen_registration_table_for_txref($txRef);
+
+    return cavemen_fetch_registration_row_from_table($pdo, $table, $txRef);
 }
 
 function cavemen_registration_row($row)
@@ -535,9 +678,19 @@ function cavemen_get_payment_links()
     return is_array($j) ? $j : ['Performer' => '', 'Audience' => ''];
 }
 
-function cavemen_send_ticket_email_php($registration)
+function cavemen_get_dahk_payment_links()
 {
-    $event = cavemen_event_name();
+    $path = cavemen_site_root() . '/data/dahk-payment-links.json';
+    if (!is_readable($path)) {
+        return ['DAHK Package' => ''];
+    }
+    $j = json_decode(file_get_contents($path), true);
+    return is_array($j) ? $j : ['DAHK Package' => ''];
+}
+
+function cavemen_send_ticket_email_php($registration, $eventOverride = null)
+{
+    $event = $eventOverride !== null && $eventOverride !== '' ? (string) $eventOverride : cavemen_event_name();
     $html = AsaliEmailPhp::buildTicketEmailHtml(
         $registration['fullName'],
         $registration['ticketCode'],
@@ -674,7 +827,8 @@ function cavemen_handle_api_asali_registrations_post()
                 ],
                 $thankYou,
                 $registrationId,
-                $data['attendanceType']
+                $data['attendanceType'],
+                ['eventTitle' => cavemen_event_name(), 'metaEvent' => 'asali']
             );
         } catch (Throwable $e) {
             error_log('[cavemen] Flutterwave init failed: ' . $e->getMessage());
@@ -691,6 +845,99 @@ function cavemen_handle_api_asali_registrations_post()
         $paymentUrl = isset($links[$t]) && trim($links[$t]) !== '' ? trim($links[$t]) : null;
         if ($paymentUrl === null) {
             $del = $pdo->prepare('DELETE FROM asali_registrations WHERE id = ?');
+            $del->execute([$registrationId]);
+            cavemen_json_response(503, [
+                'error' => "Payment link not configured yet for {$t} tickets.",
+            ]);
+            return;
+        }
+    }
+    $flow = (string) cavemen_env('FLUTTERWAVE_SECRET_KEY', '') !== '' ? 'flutterwave_api' : 'payment_link';
+    cavemen_json_response(201, [
+        'ok' => true,
+        'registrationId' => $registrationId,
+        'message' => 'Registration received successfully.',
+        'paymentUrl' => $paymentUrl,
+        'ticketPriceNaira' => $data['ticketPriceNaira'],
+        'paymentFlow' => $flow,
+    ]);
+}
+
+function cavemen_handle_api_dahk_registrations_post()
+{
+    $pdo = cavemen_pdo();
+    $raw = '';
+    try {
+        $raw = cavemen_read_request_body(65536);
+    } catch (RuntimeException $e) {
+        if ($e->getMessage() === 'Payload too large') {
+            cavemen_json_response(413, ['error' => 'Request body too large.']);
+            return;
+        }
+        throw $e;
+    }
+    $payload = json_decode($raw ?: '[]', true);
+    if (!is_array($payload)) {
+        cavemen_json_response(400, ['error' => 'Invalid JSON request body.']);
+        return;
+    }
+    $validation = cavemen_validate_dahk_registration($payload);
+    if (isset($validation['error'])) {
+        cavemen_json_response(400, ['error' => $validation['error']]);
+        return;
+    }
+    $data = $validation['data'];
+
+    $ins = $pdo->prepare('INSERT INTO dahk_seasons_registrations (
+    full_name, phone, email, gender, discovery, attendance_type, ticket_price_naira, notes, payment_status
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, \'pending\')');
+    $ins->execute([
+        $data['fullName'],
+        $data['phone'],
+        $data['email'],
+        $data['gender'],
+        $data['discovery'],
+        $data['attendanceType'],
+        $data['ticketPriceNaira'],
+        $data['notes'],
+    ]);
+    $registrationId = (int) $pdo->lastInsertId();
+    $txRef = 'DAHK-' . $registrationId . '-' . (int) (microtime(true) * 1000);
+    $upd = $pdo->prepare('UPDATE dahk_seasons_registrations SET tx_ref = :tx WHERE id = :id');
+    $upd->execute([':tx' => $txRef, ':id' => $registrationId]);
+
+    $thankYou = cavemen_public_base_url() . '/dahk-seasons/register/thank-you/?tx_ref=' . rawurlencode($txRef);
+    $paymentUrl = null;
+    if ((string) cavemen_env('FLUTTERWAVE_SECRET_KEY', '') !== '') {
+        try {
+            $paymentUrl = cavemen_flutterwave_init_payment(
+                $txRef,
+                $data['ticketPriceNaira'],
+                [
+                    'email' => $data['email'],
+                    'phone' => $data['phone'],
+                    'name' => $data['fullName'],
+                ],
+                $thankYou,
+                $registrationId,
+                $data['attendanceType'],
+                ['eventTitle' => cavemen_dahk_event_name(), 'metaEvent' => 'dahk']
+            );
+        } catch (Throwable $e) {
+            error_log('[cavemen] DAHK Flutterwave init failed: ' . $e->getMessage());
+            $del = $pdo->prepare('DELETE FROM dahk_seasons_registrations WHERE id = ?');
+            $del->execute([$registrationId]);
+            cavemen_json_response(502, [
+                'error' => 'Payment could not be started. Please try again in a moment or contact info@cavemen.africa.',
+            ]);
+            return;
+        }
+    } else {
+        $links = cavemen_get_dahk_payment_links();
+        $t = $data['attendanceType'];
+        $paymentUrl = isset($links[$t]) && trim($links[$t]) !== '' ? trim($links[$t]) : null;
+        if ($paymentUrl === null) {
+            $del = $pdo->prepare('DELETE FROM dahk_seasons_registrations WHERE id = ?');
             $del->execute([$registrationId]);
             cavemen_json_response(503, [
                 'error' => "Payment link not configured yet for {$t} tickets.",
@@ -774,13 +1021,17 @@ function cavemen_handle_api_flutterwave_webhook()
         $idFromMeta = (int) $meta['registration_id'];
     }
     $metaIdValid = $idFromMeta !== null && $idFromMeta > 0;
+    $metaEvent = isset($meta['cavemen_event']) && (string) $meta['cavemen_event'] === 'dahk' ? 'dahk' : 'asali';
+    $tableFromMeta = $metaEvent === 'dahk' ? 'dahk_seasons_registrations' : 'asali_registrations';
 
     $pdo = cavemen_pdo();
     $reg = cavemen_fetch_registration_by_txref($pdo, $txRef);
+    $table = cavemen_registration_table_for_txref((string) $txRef);
     if (!$reg && $metaIdValid) {
-        $byId = cavemen_fetch_registration_by_id($pdo, $idFromMeta);
+        $byId = cavemen_fetch_registration_by_id($pdo, $idFromMeta, $tableFromMeta);
         if ($byId && ($byId['txRef'] ?? null) === $txRef) {
             $reg = $byId;
+            $table = $tableFromMeta;
         }
     }
     if (!$reg) {
@@ -792,29 +1043,34 @@ function cavemen_handle_api_flutterwave_webhook()
         cavemen_json_response(200, ['received' => true, 'duplicate' => true]);
         return;
     }
-    $ticketCode = $reg['ticketCode'] ?: cavemen_generate_ticket_code($reg['id']);
+    $ticketCode = $reg['ticketCode'] ?: (
+        $table === 'dahk_seasons_registrations'
+            ? cavemen_generate_dahk_ticket_code($reg['id'])
+            : cavemen_generate_ticket_code($reg['id'])
+    );
     if ($reg['paymentStatus'] !== 'paid') {
-        $st = $pdo->prepare('UPDATE asali_registrations SET
-      payment_status = \'paid\',
+        $st = $pdo->prepare("UPDATE {$table} SET
+      payment_status = 'paid',
       flutterwave_transaction_id = :tid,
       ticket_code = :code
-     WHERE id = :id');
+     WHERE id = :id");
         $st->execute([
             ':tid' => (string) $transactionId,
             ':code' => $ticketCode,
             ':id' => $reg['id'],
         ]);
     } elseif (empty($reg['ticketCode'])) {
-        $st = $pdo->prepare('UPDATE asali_registrations SET ticket_code = :code WHERE id = :id');
+        $st = $pdo->prepare("UPDATE {$table} SET ticket_code = :code WHERE id = :id");
         $st->execute([':code' => $ticketCode, ':id' => $reg['id']]);
     }
-    $reg = cavemen_fetch_registration_by_id($pdo, $reg['id']);
+    $reg = cavemen_fetch_registration_by_id($pdo, $reg['id'], $table);
     $reg['ticketCode'] = $ticketCode;
     if (empty($reg['ticketEmailSentAt'])) {
         try {
-            $sent = cavemen_send_ticket_email_php($reg);
+            $eventNameForEmail = $table === 'dahk_seasons_registrations' ? cavemen_dahk_event_name() : cavemen_event_name();
+            $sent = cavemen_send_ticket_email_php($reg, $eventNameForEmail);
             if ($sent) {
-                $m = $pdo->prepare('UPDATE asali_registrations SET ticket_email_sent_at = CURRENT_TIMESTAMP WHERE id = ?');
+                $m = $pdo->prepare("UPDATE {$table} SET ticket_email_sent_at = CURRENT_TIMESTAMP WHERE id = ?");
                 $m->execute([$reg['id']]);
             }
         } catch (Throwable $e) {
@@ -824,7 +1080,7 @@ function cavemen_handle_api_flutterwave_webhook()
     cavemen_json_response(200, ['received' => true]);
 }
 
-function cavemen_handle_asali_payment_status()
+function cavemen_handle_registration_payment_status()
 {
     $txRef = '';
     if (isset($_GET['tx_ref'])) {
@@ -843,15 +1099,17 @@ function cavemen_handle_asali_payment_status()
         cavemen_json_response(404, ['error' => 'Registration not found.']);
         return;
     }
+    $table = cavemen_registration_table_for_txref($txRef);
+    $isDahk = $table === 'dahk_seasons_registrations';
     $paid = $reg['paymentStatus'] === 'paid';
     $hasCode = !empty($reg['ticketCode']);
     $ticketReady = $paid && $hasCode;
-    $pdf = $ticketReady
-        ? '/api/asali-ticket.pdf?tx_ref=' . rawurlencode($txRef)
-        : null;
+    $pdfPrefix = $isDahk ? '/api/dahk-ticket.pdf' : '/api/asali-ticket.pdf';
+    $pdf = $ticketReady ? $pdfPrefix . '?tx_ref=' . rawurlencode($txRef) : null;
+    $eventName = $isDahk ? cavemen_dahk_event_name() : cavemen_event_name();
     cavemen_json_response(200, [
         'status' => $paid ? 'paid' : 'pending',
-        'eventName' => cavemen_event_name(),
+        'eventName' => $eventName,
         'fullName' => $reg['fullName'],
         'attendanceType' => $reg['attendanceType'],
         'ticketPriceNaira' => $reg['ticketPriceNaira'],
@@ -861,7 +1119,17 @@ function cavemen_handle_asali_payment_status()
     ]);
 }
 
-function cavemen_output_asali_ticket_pdf()
+function cavemen_handle_asali_payment_status()
+{
+    cavemen_handle_registration_payment_status();
+}
+
+function cavemen_handle_dahk_payment_status()
+{
+    cavemen_handle_registration_payment_status();
+}
+
+function cavemen_output_registration_ticket_pdf()
 {
     $txRef = '';
     if (isset($_GET['tx_ref'])) {
@@ -891,12 +1159,14 @@ function cavemen_output_asali_ticket_pdf()
     }
     require_once $autoload;
     require_once cavemen_site_root() . '/lib/AsaliTicketPdfHtml.php';
-    $html = AsaliTicketPdfHtml::build(
-        $reg,
-        cavemen_event_name(),
-        cavemen_env('ASALI_VENUE_LINE', 'No 2 Guda Abdullahi Road, Farm Center, Kano, Nigeria'),
-        $txRef
-    );
+    $table = cavemen_registration_table_for_txref($txRef);
+    $isDahk = $table === 'dahk_seasons_registrations';
+    $eventName = $isDahk ? cavemen_dahk_event_name() : cavemen_event_name();
+    $venue = $isDahk
+        ? cavemen_dahk_venue_line()
+        : cavemen_env('ASALI_VENUE_LINE', 'No 2 Guda Abdullahi Road, Farm Center, Kano, Nigeria');
+    $filename = $isDahk ? 'cavemen-dahk-seasons-ticket.pdf' : 'cavemen-asali-ticket.pdf';
+    $html = AsaliTicketPdfHtml::build($reg, $eventName, $venue, $txRef);
     $options = new \Dompdf\Options();
     $options->set('isRemoteEnabled', false);
     $options->set('isHtml5ParserEnabled', true);
@@ -905,8 +1175,18 @@ function cavemen_output_asali_ticket_pdf()
     $dompdf->setPaper('A4', 'portrait');
     $dompdf->render();
     header('Content-Type: application/pdf');
-    header('Content-Disposition: attachment; filename="cavemen-asali-ticket.pdf"');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('Cache-Control: no-store');
     echo $dompdf->output();
     exit;
+}
+
+function cavemen_output_asali_ticket_pdf()
+{
+    cavemen_output_registration_ticket_pdf();
+}
+
+function cavemen_output_dahk_ticket_pdf()
+{
+    cavemen_output_registration_ticket_pdf();
 }
